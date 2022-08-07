@@ -15,7 +15,8 @@ char *the_game_name = "SPACE SHOOTER";
 char pathbuffer[256];
 char win_closed = 0;
 int del_count=0;
-int bullet_delc_interval = 20;
+int bullet_delc_interval = 10;
+int bullet_vel_perframe = 3;
 int mouseX, mouseY;
 int WW, WH;
 SDL_Rect hero;
@@ -23,7 +24,8 @@ struct Bullets game_bullets;
 int max_bullets_per_screen = 450;
 
 
-//Texture ,surfaces, renderers
+//Texture ,surfaces, renderers, windows
+SDL_Window* win;
 SDL_Surface* herosurface;
 SDL_Surface* bulletsurface;
 SDL_Texture* herotexture;
@@ -41,7 +43,7 @@ void updateHeroPos(SDL_Rect *hero){
 
 void updateBullets(struct Bullets *bullets){
     for(int i =0; i<bullets->length; i++){
-        bullets->each[i].y -= 1;
+        bullets->each[i].y -= bullet_vel_perframe;
     }
 }
 
@@ -68,12 +70,50 @@ void generateBullet(struct Bullets *bullets){
     
 }
 
+void event_management_loop(){
+    SDL_Event win_event;
+    while(SDL_PollEvent(&win_event)){
+        if(
+            (win_event.type == SDL_KEYDOWN && win_event.key.keysym.sym == SDLK_ESCAPE) 
+            ||
+            (win_event.type == SDL_WINDOWEVENT && win_event.window.event == SDL_WINDOWEVENT_CLOSE)
+            ){
+                win_closed = 1;
+                printf("Quit sdl\n");
+                SDL_DestroyWindow(win);
+                SDL_Quit();
+        }
+    }
+}
+
+void start_shooting(){
+    int i;
+    while(!win_closed){
+        SDL_GetMouseState(&mouseX,&mouseY);
+        SDL_GetWindowSize(win,&WW, &WH);
+        
+        event_management_loop();
+
+        if(del_count%(bullet_delc_interval) == 0){
+            generateBullet(&game_bullets);
+        }
+        updateHeroPos(&hero);
+        updateBullets(&game_bullets);
+
+        SDL_RenderClear(rend);
+        SDL_RenderCopy(rend, herotexture, NULL, &hero);
+        for(i=0;i<game_bullets.length; i++){
+            SDL_RenderCopy(rend, bullettexture, NULL, game_bullets.each+i);
+        }
+        SDL_RenderPresent(rend);
+        SDL_Delay(1000 / 60);
+        del_count += 1;
+    };
+}
 
 void main()
 {
-    SDL_Window* win;
     Uint32 render_flags;
-    SDL_Event win_event;
     int i;
 
     getcwd(pathbuffer,256);
@@ -101,36 +141,7 @@ void main()
     
 
     printf("SDL window is on!\n");
-    
-    while(!win_closed){
-        SDL_GetMouseState(&mouseX,&mouseY);
-        SDL_GetWindowSize(win,&WW, &WH);
-        while(SDL_PollEvent(&win_event)){
-            if(
-                (win_event.type == SDL_KEYDOWN && win_event.key.keysym.sym == SDLK_ESCAPE) 
-                ||
-                (win_event.type == SDL_WINDOWEVENT && win_event.window.event == SDL_WINDOWEVENT_CLOSE)
-                ){
-                    win_closed = 1;
-                    printf("Quit sdl\n");
-                    SDL_DestroyWindow(win);
-                    SDL_Quit();
-            }
-        }
-        if(del_count%(bullet_delc_interval) == 0){
-            generateBullet(&game_bullets);
-        }
-        updateHeroPos(&hero);
-        updateBullets(&game_bullets);
 
-        SDL_RenderClear(rend);
-        SDL_RenderCopy(rend, herotexture, NULL, &hero);
-        for(i=0;i<game_bullets.length; i++){
-            SDL_RenderCopy(rend, bullettexture, NULL, game_bullets.each+i);
-        }
-        SDL_RenderPresent(rend);
-        SDL_Delay(1000 / 60);
-        del_count += 1;
-    };
+    start_shooting();
     
 }
