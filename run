@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+xmake build
+
+xmake run -w .

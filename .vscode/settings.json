@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "sdl_image.h": "c",
+        "*.tcc": "c",
+        "string": "c",
+        "array": "c",
+        "string_view": "c",
+        "ostream": "c"
+    }
+}
