@@ -27,4 +27,4 @@
 ```$ cd space-shooter-sdl```
 
 ### Build and run
-```$ ./run``
+```$ ./run```
