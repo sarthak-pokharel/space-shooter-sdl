@@ -12,7 +12,7 @@
 * XMAKE:
     > Bash Script, Works for general: `$ bash <(curl -fsSL https://xmake.io/shget.text)`
     Other(Individual):
-    - [https://xmake.io/#/guide/installation?id=windows](Windows)
-    - [https://xmake.io/#/guide/installation?id=ubuntu](Ubuntu)
-    - [https://xmake.io/#/guide/installation?id=macos](MacOS)
-    - [https://xmake.io/#/guide/installation](Others)
+    - [Windows](https://xmake.io/#/guide/installation?id=windows)
+    - [Ubuntu](https://xmake.io/#/guide/installation?id=ubuntu)
+    - [MacOS](https://xmake.io/#/guide/installation?id=macos)
+    - [Others](https://xmake.io/#/guide/installation)
