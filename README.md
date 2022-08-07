@@ -15,4 +15,4 @@
     - (Ubuntu)[https://xmake.io/#/guide/installation?id=ubuntu]
     - (MacOS)[https://xmake.io/#/guide/installation?id=macos]
     - Bash Script, Works for general: 
-    > ```$ bash <(curl -fsSL https://xmake.io/shget.text)```
+    > `$ bash <(curl -fsSL https://xmake.io/shget.text)`
