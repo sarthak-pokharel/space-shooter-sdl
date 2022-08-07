@@ -38,7 +38,7 @@ sudo make install
 ```
 
 ### Install/configure libsdl on xmake
-- : ```$ xrepo install libsdl```
+- ```$ xrepo install libsdl```
 - ```$ xrepo install libsdl_image```
 
 ### Build and run
