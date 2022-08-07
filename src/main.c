@@ -21,7 +21,7 @@ int mouseX, mouseY;
 int WW, WH;
 SDL_Rect hero;
 struct Bullets game_bullets;
-int max_bullets_per_screen = 450;
+int max_bullets_per_screen = 50;
 
 
 //Texture ,surfaces, renderers, windows
