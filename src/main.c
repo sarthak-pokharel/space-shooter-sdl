@@ -4,6 +4,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_render.h>
+#define defendelcinterval 50
 
 struct Bullet {
     SDL_Rect context;
@@ -18,17 +19,20 @@ struct Enemy {
     int dead;
 };
 struct Enemies {
-    struct Enemy each[50];
+    struct Enemy each[300];
     int length;
 };
 
-
+int max_level_enemy_max = 250;
 char *the_game_name = "SPACE SHOOTER";
 char pathbuffer[256];
 char win_closed = 0;
 int del_count=0;
+
 int bullet_delc_interval = 10,
-    enemy_delc_interval = 40;
+    enemy_delc_interval = defendelcinterval,
+    levelup_interval = 50;
+int min_enemy_delc = 15;
 int bullet_vel_perframe = 3,
     enemies_vel_perframe = 5;
 int mouseX, mouseY;
@@ -37,7 +41,7 @@ SDL_Rect hero;
 struct Bullets game_bullets;
 struct Enemies game_enemies;
 int max_bullets_per_screen = 13,
-    max_enemies_per_screen = 10;
+    max_enemies_per_screen = 5;
 
 
 int game_over = 0;
@@ -69,10 +73,11 @@ void collision_control(){
             continue;
         }
         for(j=0; j<game_bullets.length; j++){
+            if(game_bullets.each[j].broken) continue;
             bulpos = game_bullets.each[j].context;
-            if((bulpos.x > (enempos.x-enempos.w)) && (bulpos.x < (enempos.x+enempos.w))) {
-                if(bulpos.y < (enempos.y+enempos.h/2)){
-                    printf("collision detected, enemy crash\n");
+            if((bulpos.x >= (enempos.x-enempos.w)) && (bulpos.x <= (enempos.x+enempos.w))) {
+                if(bulpos.y <= (enempos.y+enempos.h/2)){
+                    // printf("collision detected, enemy crash b(%d %d) e(%d %d)\n",bulpos.x,bulpos.y, enempos.x, enempos.y);
                     game_enemies.each[i].dead = 1;
                     game_bullets.each[j].broken = 1;
                 }
@@ -80,7 +85,6 @@ void collision_control(){
         }
     }
 }
-
 
 void updateHeroPos(SDL_Rect *hero){
     hero->x = mouseX - hero->w/2;
@@ -118,7 +122,7 @@ void generateEnemy(struct Enemies *enemies){
         // return;
     }
 
-    temp_enemy.context.x = rand()%WW;
+    temp_enemy.context.x = rand()%(WW-temp_enemy.context.w);
     temp_enemy.context.y = -10;
     enemies->each[enemies->length] = temp_enemy;
     enemies->length = enemies->length + 1;
@@ -177,6 +181,11 @@ void game_loop(){
     if(del_count%(enemy_delc_interval) == 0){
         generateEnemy(&game_enemies);
     }
+    if(del_count%(levelup_interval) == 0){
+        if(enemy_delc_interval<=min_enemy_delc){
+            enemy_delc_interval -= 1;
+        }
+    }
     updateHeroPos(&hero);
     updateBullets(&game_bullets);
     updateEnemies(&game_enemies);
@@ -208,6 +217,7 @@ void start_animation(){
         if(game_over){
             memset(&game_enemies,0, sizeof(game_enemies));
             memset(&game_bullets,0, sizeof(game_bullets));
+            enemy_delc_interval = defendelcinterval;
             continue;
         }
         game_loop();
