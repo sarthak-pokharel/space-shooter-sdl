@@ -28,17 +28,19 @@ char pathbuffer[256];
 char win_closed = 0;
 int del_count=0;
 int bullet_delc_interval = 10,
-    enemy_delc_interval = 200;
+    enemy_delc_interval = 40;
 int bullet_vel_perframe = 3,
-    enemies_vel_perframe = 1;
+    enemies_vel_perframe = 5;
 int mouseX, mouseY;
 int WW, WH;
 SDL_Rect hero;
 struct Bullets game_bullets;
 struct Enemies game_enemies;
 int max_bullets_per_screen = 13,
-    max_enemies_per_screen = 5;
+    max_enemies_per_screen = 10;
 
+
+int game_over = 0;
 
 //Texture ,surfaces, renderers, windows
 SDL_Window* win;
@@ -51,9 +53,32 @@ SDL_Texture* bullettexture;
 SDL_Texture* enemytexture;
 SDL_Renderer* rend;
 
-
+void declare_gameover(){
+    game_over = 1;
+    printf("Game is over\n ");
+}
 void collision_control(){
-    
+    int i, j;
+    SDL_Rect bulpos;
+    SDL_Rect enempos;
+    for(i=0;i<game_enemies.length; i++){
+        if(game_enemies.each[i].dead) continue;
+        enempos = game_enemies.each[i].context;
+        if(enempos.y >=WH){
+            declare_gameover();
+            continue;
+        }
+        for(j=0; j<game_bullets.length; j++){
+            bulpos = game_bullets.each[j].context;
+            if((bulpos.x > (enempos.x-enempos.w)) && (bulpos.x < (enempos.x+enempos.w))) {
+                if(bulpos.y < (enempos.y+enempos.h/2)){
+                    printf("collision detected, enemy crash\n");
+                    game_enemies.each[i].dead = 1;
+                    game_bullets.each[j].broken = 1;
+                }
+            }
+        }
+    }
 }
 
 
@@ -77,13 +102,21 @@ void updateBullets(struct Bullets *bullets){
 
 void generateEnemy(struct Enemies *enemies){
     struct Enemy temp_enemy, tmpswp;
-    if(enemies->length >= max_enemies_per_screen) return;
 
     int i;
     temp_enemy.context.w = 30;
     temp_enemy.context.h = 50;
     temp_enemy.dead = 0;
 
+    if(enemies->length >=max_enemies_per_screen){
+        enemies->length -= 1;
+        for(i = 1; i<max_enemies_per_screen;i++){
+            tmpswp = enemies->each[i];
+            enemies->each[i] = enemies->each[i-1];
+            enemies->each[i-1] = tmpswp;
+        }
+        // return;
+    }
 
     temp_enemy.context.x = rand()%WW;
     temp_enemy.context.y = -10;
@@ -127,6 +160,11 @@ void event_management_loop(){
                 printf("Quit sdl\n");
                 SDL_DestroyWindow(win);
                 SDL_Quit();
+        };
+        if(
+            (win_event.type == SDL_KEYDOWN) && (win_event.key.keysym.sym == SDLK_r)
+        ){
+            game_over = 0;
         }
     }
 }
@@ -148,9 +186,11 @@ void game_loop(){
     SDL_RenderClear(rend);
     SDL_RenderCopy(rend, herotexture, NULL, &hero);
     for(i=0;i<game_bullets.length; i++){
+        if(game_bullets.each[i].broken) continue;
         SDL_RenderCopy(rend, bullettexture, NULL, &game_bullets.each[i].context);
     }
     for(i=0;i<game_enemies.length; i++){
+        if(game_enemies.each[i].dead) continue;
         SDL_RenderCopy(rend, enemytexture, NULL, &game_enemies.each[i].context);
     }
     SDL_RenderPresent(rend);
@@ -165,6 +205,11 @@ void start_animation(){
         
         event_management_loop();
 
+        if(game_over){
+            memset(&game_enemies,0, sizeof(game_enemies));
+            memset(&game_bullets,0, sizeof(game_bullets));
+            continue;
+        }
         game_loop();
     };
 }
