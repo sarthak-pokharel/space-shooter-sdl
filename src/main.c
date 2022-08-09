@@ -214,7 +214,6 @@ void game_loop(){
             enemy_delc_interval -= 1;
         }
     }
-    show_text("Hi world", 100,200);
     updateHeroPos(&hero);
     updateBullets(&game_bullets);
     updateEnemies(&game_enemies);
