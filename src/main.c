@@ -289,7 +289,7 @@ void main()
     if(TTF_Init()<0){
         printf("error initializing TTF %s\n", TTF_GetError());
     }
-    // SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
+    SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
 
     fontname = TTF_OpenFont(font_path, def_font_size);
     if(fontname == NULL){
