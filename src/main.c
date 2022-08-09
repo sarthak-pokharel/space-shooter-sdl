@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_render.h>
 #define defendelcinterval 50
 
@@ -33,8 +34,8 @@ int bullet_delc_interval = 10,
     enemy_delc_interval = defendelcinterval,
     levelup_interval = 50;
 int min_enemy_delc = 15;
-int bullet_vel_perframe = 3,
-    enemies_vel_perframe = 5;
+int bullet_vel_perframe = 5,
+    enemies_vel_perframe = 3;
 int mouseX, mouseY;
 int WW, WH;
 SDL_Rect hero;
@@ -43,8 +44,12 @@ struct Enemies game_enemies;
 int max_bullets_per_screen = 13,
     max_enemies_per_screen = 5;
 
+int maxEnemyHealth = 3;
 
 int game_over = 0;
+
+char *font_path = "res/TURNB___.TTF";
+
 
 //Texture ,surfaces, renderers, windows
 SDL_Window* win;
@@ -56,6 +61,26 @@ SDL_Texture* herotexture;
 SDL_Texture* bullettexture;
 SDL_Texture* enemytexture;
 SDL_Renderer* rend;
+int gameScore = 0, highScore = 0;
+
+void show_text(char *txt, int x, int y){
+    TTF_Font* Sans;
+    SDL_Color White = {255, 255, 255};
+    SDL_Surface* surfaceMessage;
+    SDL_Texture* Message;
+    SDL_Rect Message_rect;
+
+    Sans = TTF_OpenFont("Sans.ttf", 24);
+    surfaceMessage = TTF_RenderText_Solid(Sans, txt, White); 
+    Message = SDL_CreateTextureFromSurface(rend, surfaceMessage);
+    Message_rect.x = x;  
+    Message_rect.y = y; 
+    Message_rect.w = 100;
+    Message_rect.h = 100;
+    SDL_RenderCopy(rend, Message, NULL, &Message_rect);
+    SDL_FreeSurface(surfaceMessage);
+    // SDL_DestroyTexture(Message);
+}
 
 void declare_gameover(){
     game_over = 1;
@@ -66,7 +91,7 @@ void collision_control(){
     SDL_Rect bulpos;
     SDL_Rect enempos;
     for(i=0;i<game_enemies.length; i++){
-        if(game_enemies.each[i].dead) continue;
+        if(game_enemies.each[i].dead == maxEnemyHealth) continue;
         enempos = game_enemies.each[i].context;
         if(enempos.y >=WH){
             declare_gameover();
@@ -78,7 +103,10 @@ void collision_control(){
             if((bulpos.x >= (enempos.x-enempos.w)) && (bulpos.x <= (enempos.x+enempos.w))) {
                 if(bulpos.y <= (enempos.y+enempos.h/2)){
                     // printf("collision detected, enemy crash b(%d %d) e(%d %d)\n",bulpos.x,bulpos.y, enempos.x, enempos.y);
-                    game_enemies.each[i].dead = 1;
+                    game_enemies.each[i].dead += 1;
+                    if(game_enemies.each[i].dead == maxEnemyHealth){
+                        gameScore += 10;
+                    }
                     game_bullets.each[j].broken = 1;
                 }
             }
@@ -132,8 +160,8 @@ void generateEnemy(struct Enemies *enemies){
 void generateBullet(struct Bullets *bullets){
     struct Bullet temp_blt, tmpswp;
     int i;
-    temp_blt.context.w = 15;
-    temp_blt.context.h = 50;
+    temp_blt.context.w = 15/2;
+    temp_blt.context.h = 50/2;
     temp_blt.broken = 0;
     
     if(bullets->length >=max_bullets_per_screen){
@@ -186,11 +214,12 @@ void game_loop(){
             enemy_delc_interval -= 1;
         }
     }
+    show_text("Hi world", 100,200);
     updateHeroPos(&hero);
     updateBullets(&game_bullets);
     updateEnemies(&game_enemies);
-
     collision_control();
+
 
     SDL_RenderClear(rend);
     SDL_RenderCopy(rend, herotexture, NULL, &hero);
@@ -199,7 +228,7 @@ void game_loop(){
         SDL_RenderCopy(rend, bullettexture, NULL, &game_bullets.each[i].context);
     }
     for(i=0;i<game_enemies.length; i++){
-        if(game_enemies.each[i].dead) continue;
+        if(game_enemies.each[i].dead == maxEnemyHealth) continue;
         SDL_RenderCopy(rend, enemytexture, NULL, &game_enemies.each[i].context);
     }
     SDL_RenderPresent(rend);
@@ -211,13 +240,16 @@ void start_animation(){
     while(!win_closed){
         SDL_GetMouseState(&mouseX,&mouseY);
         SDL_GetWindowSize(win,&WW, &WH);
-        
         event_management_loop();
 
         if(game_over){
             memset(&game_enemies,0, sizeof(game_enemies));
             memset(&game_bullets,0, sizeof(game_bullets));
             enemy_delc_interval = defendelcinterval;
+            if(highScore > gameScore){
+                highScore = gameScore;
+            }
+            gameScore = 0;
             continue;
         }
         game_loop();
@@ -245,6 +277,8 @@ void main()
     }
 
     win = SDL_CreateWindow(the_game_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, 0);
+    SDL_ShowCursor(0);
+    SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
     render_flags = SDL_RENDERER_ACCELERATED;
     rend = SDL_CreateRenderer(win, -1, render_flags);
     herosurface = IMG_Load(hero_img_path);
@@ -259,7 +293,6 @@ void main()
     SDL_FreeSurface(enemysurface);
 
     SDL_QueryTexture(herotexture, NULL, NULL, &hero.w, &hero.h);
-    
     hero.w = 50;
     hero.h = 50;
     
