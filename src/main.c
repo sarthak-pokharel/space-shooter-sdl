@@ -30,6 +30,8 @@ char pathbuffer[256];
 char win_closed = 0;
 int del_count=0;
 
+int def_font_size = 16;
+
 int bullet_delc_interval = 10,
     enemy_delc_interval = defendelcinterval,
     levelup_interval = 50;
@@ -48,7 +50,11 @@ int maxEnemyHealth = 3;
 
 int game_over = 0;
 
-char *font_path = "res/TURNB___.TTF";
+char* font_path = "res/TURNB___.TTF";
+char* hero_img_path = "res/spaceship-png-icon-17267.png";
+char* bullet_img_path = "res/kindpng_2969110.png";
+char* enemy_img_path = "res/PngItem_852440.png";
+
 
 
 //Texture ,surfaces, renderers, windows
@@ -61,25 +67,25 @@ SDL_Texture* herotexture;
 SDL_Texture* bullettexture;
 SDL_Texture* enemytexture;
 SDL_Renderer* rend;
+TTF_Font* fontname;
 int gameScore = 0, highScore = 0;
 
 void show_text(char *txt, int x, int y){
-    TTF_Font* Sans;
     SDL_Color White = {255, 255, 255};
     SDL_Surface* surfaceMessage;
     SDL_Texture* Message;
     SDL_Rect Message_rect;
 
-    Sans = TTF_OpenFont("Sans.ttf", 24);
-    surfaceMessage = TTF_RenderText_Solid(Sans, txt, White); 
+    surfaceMessage = TTF_RenderText_Solid(fontname, txt, White); 
     Message = SDL_CreateTextureFromSurface(rend, surfaceMessage);
-    Message_rect.x = x;  
+    Message_rect.x = x;
     Message_rect.y = y; 
-    Message_rect.w = 100;
-    Message_rect.h = 100;
+    Message_rect.w = surfaceMessage->w;
+    Message_rect.h = surfaceMessage->h;
+    
     SDL_RenderCopy(rend, Message, NULL, &Message_rect);
     SDL_FreeSurface(surfaceMessage);
-    // SDL_DestroyTexture(Message);
+    SDL_DestroyTexture(Message);
 }
 
 void declare_gameover(){
@@ -221,6 +227,12 @@ void game_loop(){
 
 
     SDL_RenderClear(rend);
+    char txtToShow[100];
+    float del_y = 20;
+    sprintf(txtToShow, "Score: %d", gameScore);
+    show_text(txtToShow, 10, 20);
+    sprintf(txtToShow, "High Score: %d", highScore);
+    show_text(txtToShow, 10, 20+del_y);
     SDL_RenderCopy(rend, herotexture, NULL, &hero);
     for(i=0;i<game_bullets.length; i++){
         if(game_bullets.each[i].broken) continue;
@@ -230,8 +242,6 @@ void game_loop(){
         if(game_enemies.each[i].dead == maxEnemyHealth) continue;
         SDL_RenderCopy(rend, enemytexture, NULL, &game_enemies.each[i].context);
     }
-    SDL_RenderPresent(rend);
-    SDL_Delay(1000 / 60);
     del_count += 1;
 }
 
@@ -242,23 +252,21 @@ void start_animation(){
         event_management_loop();
 
         if(game_over){
+            show_text("Game Over, press R to restart",WW/2-150, WH/2);
             memset(&game_enemies,0, sizeof(game_enemies));
             memset(&game_bullets,0, sizeof(game_bullets));
             enemy_delc_interval = defendelcinterval;
-            if(highScore > gameScore){
+            if(highScore < gameScore){
                 highScore = gameScore;
             }
             gameScore = 0;
-            continue;
+        }else{
+            game_loop();
         }
-        game_loop();
+        SDL_RenderPresent(rend);
+        SDL_Delay(1000 / 60);
     };
 }
-
-char* hero_img_path = "res/spaceship-png-icon-17267.png";
-char* bullet_img_path = "res/kindpng_2969110.png";
-
-char* enemy_img_path = "res/PngItem_852440.png";
 
 void main()
 {
@@ -277,7 +285,17 @@ void main()
 
     win = SDL_CreateWindow(the_game_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, 0);
     SDL_ShowCursor(0);
-    SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
+
+    if(TTF_Init()<0){
+        printf("error initializing TTF %s\n", TTF_GetError());
+    }
+    // SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
+
+    fontname = TTF_OpenFont(font_path, def_font_size);
+    if(fontname == NULL){
+        printf("Error loading font :%s\n", TTF_GetError());
+    }
+
     render_flags = SDL_RENDERER_ACCELERATED;
     rend = SDL_CreateRenderer(win, -1, render_flags);
     herosurface = IMG_Load(hero_img_path);
@@ -294,7 +312,6 @@ void main()
     SDL_QueryTexture(herotexture, NULL, NULL, &hero.w, &hero.h);
     hero.w = 50;
     hero.h = 50;
-    
 
     printf("The game is on!\n");
 
